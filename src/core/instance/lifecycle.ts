@@ -83,8 +83,15 @@ export function lifecycleMixin(Vue: typeof Component) {
       vm.$el.__vue__ = vm
     }
     // if parent is an HOC, update its $el as well
-    if (vm.$vnode && vm.$parent && vm.$vnode === vm.$parent._vnode) {
-      vm.$parent.$el = vm.$el
+    let wrapper: Component | undefined = vm
+    while (
+      wrapper &&
+      wrapper.$vnode &&
+      wrapper.$parent &&
+      wrapper.$vnode === wrapper.$parent._vnode
+    ) {
+      wrapper.$parent.$el = wrapper.$el
+      wrapper = wrapper.$parent
     }
     // updated hook is called by the scheduler to ensure that children are
     // updated in a parent's updated hook.
@@ -209,7 +216,6 @@ export function mountComponent(
   // we set this to vm._watcher inside the watcher's constructor
   // since the watcher's initial patch may call $forceUpdate (e.g. inside child
   // component's mounted hook), which relies on vm._watcher being already defined
-  vm._scope.on()
   new Watcher(
     vm,
     updateComponent,
@@ -217,7 +223,6 @@ export function mountComponent(
     watcherOptions,
     true /* isRenderWatcher */
   )
-  vm._scope.off()
   hydrating = false
 
   // flush buffer for flush: "pre" watchers queued in setup()

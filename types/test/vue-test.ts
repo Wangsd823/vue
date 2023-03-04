@@ -1,4 +1,4 @@
-import Vue, { VNode } from '../index'
+import Vue, { VNode, defineComponent } from '../index'
 import { ComponentOptions } from '../options'
 
 class Test extends Vue {
@@ -228,21 +228,58 @@ obj.a++
 const ComponentWithStyleInVNodeData = Vue.extend({
   render(h) {
     const elementWithStyleAsString = h('div', {
-      style: 'background-color: red;'
+      style: '--theme-color: black;'
     })
 
-    const elementWithStyleAsObject = h('div', {
-      style: { backgroundColor: 'green' }
+    const elementWithStyleCSSProperties = h('div', {
+      style: { ['--theme-color' as any]: 'black' }
     })
 
-    const elementWithStyleAsArrayOfObjects = h('div', {
-      style: [{ backgroundColor: 'blue' }]
+    const elementWithStyleAsArrayOfStyleValues = h('div', {
+      style: [{ ['--theme-color' as any]: 'black' }]
     })
 
     return h('div', undefined, [
       elementWithStyleAsString,
-      elementWithStyleAsObject,
-      elementWithStyleAsArrayOfObjects
+      elementWithStyleCSSProperties,
+      elementWithStyleAsArrayOfStyleValues
     ])
+  }
+})
+
+// infer mixin type with new Vue() #12730
+new Vue({
+  mixins: [
+    defineComponent({
+      props: {
+        p1: String,
+        p2: {
+          type: Number,
+          default: 0
+        }
+      },
+      data() {
+        return {
+          foo: 123
+        }
+      },
+      computed: {
+        bar() {
+          return 123
+        }
+      }
+    }),
+    {
+      methods: {
+        hello(n: number) {}
+      }
+    }
+  ],
+  created() {
+    this.hello(this.foo)
+    this.hello(this.bar)
+    // @ts-expect-error
+    this.hello(this.p1)
+    this.hello(this.p2)
   }
 })
